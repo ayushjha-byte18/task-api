@@ -39,3 +39,26 @@ def get_task(id: int):
         status_code=404,
         content={"error": f"Task {id} not found"}
     )
+
+
+@app.post("/tasks", status_code=201)
+def create_task(body: dict):
+    title = body.get("title")
+
+    if not isinstance(title, str) or not title.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Title is required"}
+        )
+
+    new_id = max(task["id"] for task in tasks) + 1
+
+    new_task = {
+        "id": new_id,
+        "title": title,
+        "done": False
+    }
+
+    tasks.append(new_task)
+
+    return new_task
