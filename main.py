@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-app = FastAPI()
+app = FastAPI(
+    title="Task API",
+    version="1.0"
+)
 
 tasks = [
     {"id": 1, "title": "Learn FastAPI", "done": False},
