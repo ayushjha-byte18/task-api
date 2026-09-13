@@ -106,17 +106,20 @@ def create_task(body: dict):
             content={"error": "Title is required"}
         )
 
-    new_id = max(task["id"] for task in tasks) + 1
+    cursor.execute(
+        "INSERT INTO tasks (title, done) VALUES (?, ?)",
+        (title, 0)
+    )
 
-    new_task = {
+    conn.commit()
+
+    new_id = cursor.lastrowid
+
+    return {
         "id": new_id,
         "title": title,
         "done": False
     }
-
-    tasks.append(new_task)
-
-    return new_task
 
 @app.put("/tasks/{id}")
 def update_task(id: int, body: dict):
