@@ -123,38 +123,62 @@ def create_task(body: dict):
 
 @app.put("/tasks/{id}")
 def update_task(id: int, body: dict):
-    for task in tasks:
-        if task["id"] == id:
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
+    )
 
-            if not body:
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "Request body cannot be empty"}
-                )
+    row = cursor.fetchone()
 
-            if "title" in body:
-                if not isinstance(body["title"], str) or not body["title"].strip():
-                    return JSONResponse(
-                        status_code=400,
-                        content={"error": "Title cannot be empty"}
-                    )
-                task["title"] = body["title"]
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Task {id} not found"}
+        )
 
-            if "done" in body:
-                if not isinstance(body["done"], bool):
-                    return JSONResponse(
-                        status_code=400,
-                        content={"error": "Done must be true or false"}
-                    )
-                task["done"] = body["done"]
+    if not body:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Request body cannot be empty"}
+        )
 
-            if "title" not in body and "done" not in body:
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "Invalid request body"}
-                )
+    title = row[1]
+    done = bool(row[2])
 
-            return task
+    if "title" in body:
+        if not isinstance(body["title"], str) or not body["title"].strip():
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Title cannot be empty"}
+            )
+        title = body["title"]
+
+    if "done" in body:
+        if not isinstance(body["done"], bool):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Done must be true or false"}
+            )
+        done = body["done"]
+
+    if "title" not in body and "done" not in body:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid request body"}
+        )
+
+    cursor.execute(
+        "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
+        (title, int(done), id)
+    )
+
+    conn.commit()
+
+    return {
+        "id": id,
+        "title": title,
+        "done": done
+    }
 
     return JSONResponse(
         status_code=404,
@@ -163,12 +187,17 @@ def update_task(id: int, body: dict):
 
 @app.delete("/tasks/{id}", status_code=204)
 def delete_task(id: int):
-    for task in tasks:
-        if task["id"] == id:
-            tasks.remove(task)
-            return
-
-    return JSONResponse(
-        status_code=404,
-        content={"error": f"Task {id} not found"}
+    cursor.execute(
+        "DELETE FROM tasks WHERE id = ?",
+        (id,)
     )
+
+    if cursor.rowcount == 0:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Task {id} not found"}
+        )
+
+    conn.commit()
+
+    return
