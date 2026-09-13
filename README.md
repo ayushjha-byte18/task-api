@@ -79,3 +79,7 @@ Press:
 Don't commit yet.
 
 Tell me **“saved”** once you've saved it, and I'll give you the exact Git commands for the **Stage 4 commit**.
+
+## Database Screenshot
+
+![SQLite Database](db-browser.png)
