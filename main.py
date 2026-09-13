@@ -2,7 +2,7 @@ import sqlite3
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-conn = sqlite3.connect("tasks.db")
+conn = sqlite3.connect("tasks.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute("""
@@ -32,7 +32,7 @@ if count == 0:
     )
 
     conn.commit()
-    
+
 app = FastAPI(
     title="Task API",
     version="1.0"
@@ -61,19 +61,39 @@ def health():
 
 @app.get("/tasks")
 def get_tasks():
-    return tasks
+    cursor.execute("SELECT * FROM tasks")
+    rows = cursor.fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "title": row[1],
+            "done": bool(row[2])
+        }
+        for row in rows
+    ]
 
 
 @app.get("/tasks/{id}")
 def get_task(id: int):
-    for task in tasks:
-        if task["id"] == id:
-            return task
-
-    return JSONResponse(
-        status_code=404,
-        content={"error": f"Task {id} not found"}
+    cursor.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
     )
+
+    row = cursor.fetchone()
+
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Task {id} not found"}
+        )
+
+    return {
+        "id": row[0],
+        "title": row[1],
+        "done": bool(row[2])
+    }
 
 
 @app.post("/tasks", status_code=201)
