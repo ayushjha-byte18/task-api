@@ -1,6 +1,38 @@
+import sqlite3
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
+conn = sqlite3.connect("tasks.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        done BOOLEAN NOT NULL
+    )
+""")
+
+conn.commit()
+cursor.execute("SELECT COUNT(*) FROM tasks")
+count = cursor.fetchone()[0]
+
+if count == 0:
+    cursor.execute(
+        "INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
+        (1, "Learn FastAPI", 0)
+    )
+    cursor.execute(
+        "INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
+        (2, "Build CRUD API", 0)
+    )
+    cursor.execute(
+        "INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
+        (3, "Practice DSA", 1)
+    )
+
+    conn.commit()
+    
 app = FastAPI(
     title="Task API",
     version="1.0"
