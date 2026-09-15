@@ -1,37 +1,47 @@
-import sqlite3
+import os
+import psycopg
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-conn = sqlite3.connect("tasks.db", check_same_thread=False)
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+conn = psycopg.connect(DATABASE_URL)
 cursor = conn.cursor()
 
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
         done BOOLEAN NOT NULL
     )
 """)
 
 conn.commit()
+
 cursor.execute("SELECT COUNT(*) FROM tasks")
 count = cursor.fetchone()[0]
 
 if count == 0:
     cursor.execute(
-        "INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
-        (1, "Learn FastAPI", 0)
+        "INSERT INTO tasks (id, title, done) VALUES (%s, %s, %s)",
+        (1, "Learn FastAPI", False)
     )
+
     cursor.execute(
-        "INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
-        (2, "Build CRUD API", 0)
+        "INSERT INTO tasks (id, title, done) VALUES (%s, %s, %s)",
+        (2, "Build CRUD API", False)
     )
+
     cursor.execute(
-        "INSERT INTO tasks (id, title, done) VALUES (?, ?, ?)",
-        (3, "Practice DSA", 1)
+        "INSERT INTO tasks (id, title, done) VALUES (%s, %s, %s)",
+        (3, "Practice DSA", True)
     )
 
     conn.commit()
+
 
 app = FastAPI(
     title="Task API",
@@ -77,7 +87,7 @@ def get_tasks():
 @app.get("/tasks/{id}")
 def get_task(id: int):
     cursor.execute(
-        "SELECT * FROM tasks WHERE id = ?",
+        "SELECT * FROM tasks WHERE id = %s",
         (id,)
     )
 
@@ -107,13 +117,13 @@ def create_task(body: dict):
         )
 
     cursor.execute(
-        "INSERT INTO tasks (title, done) VALUES (?, ?)",
-        (title, 0)
+        "INSERT INTO tasks (title, done) VALUES (%s, %s) RETURNING id",
+        (title, False)
     )
 
     conn.commit()
 
-    new_id = cursor.lastrowid
+    new_id = cursor.fetchone()[0]
 
     return {
         "id": new_id,
@@ -121,10 +131,11 @@ def create_task(body: dict):
         "done": False
     }
 
+
 @app.put("/tasks/{id}")
 def update_task(id: int, body: dict):
     cursor.execute(
-        "SELECT * FROM tasks WHERE id = ?",
+        "SELECT * FROM tasks WHERE id = %s",
         (id,)
     )
 
@@ -151,6 +162,7 @@ def update_task(id: int, body: dict):
                 status_code=400,
                 content={"error": "Title cannot be empty"}
             )
+
         title = body["title"]
 
     if "done" in body:
@@ -159,6 +171,7 @@ def update_task(id: int, body: dict):
                 status_code=400,
                 content={"error": "Done must be true or false"}
             )
+
         done = body["done"]
 
     if "title" not in body and "done" not in body:
@@ -168,8 +181,8 @@ def update_task(id: int, body: dict):
         )
 
     cursor.execute(
-        "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
-        (title, int(done), id)
+        "UPDATE tasks SET title = %s, done = %s WHERE id = %s",
+        (title, done, id)
     )
 
     conn.commit()
@@ -180,15 +193,11 @@ def update_task(id: int, body: dict):
         "done": done
     }
 
-    return JSONResponse(
-        status_code=404,
-        content={"error": f"Task {id} not found"}
-    )
 
 @app.delete("/tasks/{id}", status_code=204)
 def delete_task(id: int):
     cursor.execute(
-        "DELETE FROM tasks WHERE id = ?",
+        "DELETE FROM tasks WHERE id = %s",
         (id,)
     )
 
