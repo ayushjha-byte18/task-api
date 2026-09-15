@@ -25,20 +25,20 @@ cursor.execute("SELECT COUNT(*) FROM tasks")
 count = cursor.fetchone()[0]
 
 if count == 0:
-    cursor.execute(
-        "INSERT INTO tasks (id, title, done) VALUES (%s, %s, %s)",
-        (1, "Learn FastAPI", False)
-    )
+cursor.execute(
+    "INSERT INTO tasks (title, done) VALUES (%s, %s)",
+    ("Learn FastAPI", False)
+)
 
-    cursor.execute(
-        "INSERT INTO tasks (id, title, done) VALUES (%s, %s, %s)",
-        (2, "Build CRUD API", False)
-    )
+cursor.execute(
+    "INSERT INTO tasks (title, done) VALUES (%s, %s)",
+    ("Build CRUD API", False)
+)
 
-    cursor.execute(
-        "INSERT INTO tasks (id, title, done) VALUES (%s, %s, %s)",
-        (3, "Practice DSA", True)
-    )
+cursor.execute(
+    "INSERT INTO tasks (title, done) VALUES (%s, %s)",
+    ("Practice DSA", True)
+)
 
     conn.commit()
 
