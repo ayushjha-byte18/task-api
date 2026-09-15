@@ -1,85 +1,147 @@
-\# Task API
+# Task API
 
+A REST API built with Python, FastAPI, and PostgreSQL, containerized with Docker Compose.
 
+## What it does
 
-A small REST API built with Python and FastAPI for managing tasks.
+The API supports full CRUD operations for tasks:
 
+- Create a task
+- Read all tasks
+- Read a single task
+- Update a task
+- Delete a task
 
+Tasks are stored in PostgreSQL, so data persists across API/container restarts.
 
-\## What it does
+## Tech Stack
 
+- Python
+- FastAPI
+- PostgreSQL
+- psycopg
+- Docker
+- Docker Compose
 
+## Project Structure
 
-The API supports full CRUD operations:
+```text
+task-api-a3/
+|-- main.py
+|-- Dockerfile
+|-- compose.yaml
+|-- .dockerignore
+|-- .env.example
+|-- .gitignore
+`-- README.md
 
+## Environment Setup
 
+Create a `.env` file in the project root:
 
-\- Create a task
+```env
+DATABASE_URL=postgresql://postgres:dev@localhost:5432/tasks
 
-\- Read all tasks
+## Run with Docker Compose
 
-\- Read a single task
-
-\- Update a task
-
-\- Delete a task
-
-
-
-Tasks are stored in memory, so data resets when the server restarts.
-
-
-
-\## How to run
-
-
-
-\### 1. Install dependencies
-
-
+Start the API and PostgreSQL database with:
 
 ```bash
+docker compose up --build
+```
 
-python -m pip install "fastapi\[standard]"
+The API will be available at:
 
-## Swagger UI Screenshot
+```text
+http://localhost:8000
+```
 
-![Swagger UI](swagger.png)
+Interactive API documentation:
 
-## SQLite Database
+```text
+http://localhost:8000/docs
+```
 
-The API uses SQLite for persistent task storage instead of an in-memory list.
+To stop the containers:
 
-SQLite was chosen because it stores the database in a single file, requires zero additional database setup, and keeps data persistent across server restarts.
+```bash
+docker compose down
+```
 
-The database is stored as:
+## API Endpoints
 
-`tasks.db`
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | API information |
+| GET | `/health` | Health check |
+| GET | `/tasks` | Get all tasks |
+| GET | `/tasks/{id}` | Get one task |
+| POST | `/tasks` | Create a task |
+| PUT | `/tasks/{id}` | Update a task |
+| DELETE | `/tasks/{id}` | Delete a task |
 
-The file is created automatically when the application starts. It is also included in `.gitignore`.
+All task data is stored in PostgreSQL.
 
-## SQL Exploration
+## Example Requests
 
-During Stage 4, I explored the SQLite database using DB Browser for SQLite.
+### Get all tasks
 
-Example query:
+```bash
+curl -i http://localhost:8000/tasks
+```
 
-```sql
-SELECT * FROM tasks WHERE done = 1;
+### Create a task
 
+```bash
+curl -i -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d "{\"title\":\"Learn Docker\"}"
+```
 
-This covers the Stage 4 requirement to document one SQL query and what it returned, along with the direct-database-change verification. :contentReference[oaicite:0]{index=0}
+### Update a task
 
-### Then save the README
+```bash
+curl -i -X PUT http://localhost:8000/tasks/1 -H "Content-Type: application/json" -d "{\"done\":true}"
+```
 
-Press:
+### Delete a task
 
-**`Ctrl + S`**
+```bash
+curl -i -X DELETE http://localhost:8000/tasks/1
+```
 
-Don't commit yet.
+## Docker Architecture
 
-Tell me **“saved”** once you've saved it, and I'll give you the exact Git commands for the **Stage 4 commit**.
+The application runs as two Docker Compose services:
 
-## Database Screenshot
+- **API** — FastAPI application running on port `8000`
+- **Database** — PostgreSQL database running on port `5432`
 
-![SQLite Database](db-browser.png)
+The API connects to PostgreSQL using the Docker service name `db`.
+
+A Docker volume is used so database data persists even when the containers are stopped and restarted.
+
+## Database Persistence
+
+PostgreSQL data is stored using a Docker volume named `taskdata`.
+
+This means tasks remain available after stopping and restarting the Docker Compose services.
+
+For example, a task created before restarting the containers will still be present after:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+## PostgreSQL Database
+
+The tasks are stored in PostgreSQL:
+
+![PostgreSQL database](postgres-db.png)
+
+## Repository
+
+This project is part of my Backend Assignment A3.
+
+GitHub repository:
+
+https://github.com/ayushjha-byte18/task-api
