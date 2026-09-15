@@ -1,8 +1,10 @@
 import os
+
 import psycopg
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+
 
 load_dotenv()
 
@@ -11,6 +13,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 conn = psycopg.connect(DATABASE_URL)
 cursor = conn.cursor()
 
+
+# Create the tasks table if it does not exist
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS tasks (
         id SERIAL PRIMARY KEY,
@@ -21,24 +25,26 @@ cursor.execute("""
 
 conn.commit()
 
+
+# Seed initial tasks only when the table is empty
 cursor.execute("SELECT COUNT(*) FROM tasks")
 count = cursor.fetchone()[0]
 
 if count == 0:
-cursor.execute(
-    "INSERT INTO tasks (title, done) VALUES (%s, %s)",
-    ("Learn FastAPI", False)
-)
+    cursor.execute(
+        "INSERT INTO tasks (title, done) VALUES (%s, %s)",
+        ("Learn FastAPI", False)
+    )
 
-cursor.execute(
-    "INSERT INTO tasks (title, done) VALUES (%s, %s)",
-    ("Build CRUD API", False)
-)
+    cursor.execute(
+        "INSERT INTO tasks (title, done) VALUES (%s, %s)",
+        ("Build CRUD API", False)
+    )
 
-cursor.execute(
-    "INSERT INTO tasks (title, done) VALUES (%s, %s)",
-    ("Practice DSA", True)
-)
+    cursor.execute(
+        "INSERT INTO tasks (title, done) VALUES (%s, %s)",
+        ("Practice DSA", True)
+    )
 
     conn.commit()
 
@@ -47,12 +53,6 @@ app = FastAPI(
     title="Task API",
     version="1.0"
 )
-
-tasks = [
-    {"id": 1, "title": "Learn FastAPI", "done": False},
-    {"id": 2, "title": "Build CRUD API", "done": False},
-    {"id": 3, "title": "Practice DSA", "done": True}
-]
 
 
 @app.get("/")
