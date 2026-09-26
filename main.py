@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.responses import JSONResponse
 from supabase import create_client, Client
 from supabase_auth.errors import AuthApiError
@@ -53,7 +53,6 @@ def signup(body: dict):
     email = body.get("email")
     password = body.get("password")
 
-    # Validate required fields
     if not email or not password:
         return JSONResponse(
             status_code=400,
@@ -62,7 +61,6 @@ def signup(body: dict):
             }
         )
 
-    # Create user in Supabase
     response = supabase.auth.sign_up({
         "email": email,
         "password": password
@@ -77,7 +75,6 @@ def login(body: dict):
     email = body.get("email")
     password = body.get("password")
 
-    # Validate required fields
     if not email or not password:
         return JSONResponse(
             status_code=400,
@@ -87,7 +84,6 @@ def login(body: dict):
         )
 
     try:
-        # Sign in with Supabase
         response = supabase.auth.sign_in_with_password({
             "email": email,
             "password": password
@@ -105,3 +101,45 @@ def login(body: dict):
                 "error": "Invalid email or password"
             }
         )
+
+
+# Stage 2: Public route
+@app.get("/public/info")
+def public_info():
+    return {
+        "message": "This is a public endpoint",
+        "authenticated": False
+    }
+
+
+# Stage 2: Protected route
+@app.get("/protected/profile")
+def protected_profile(authorization: str | None = Header(default=None)):
+    # Check Authorization header
+    if not authorization:
+        return JSONResponse(
+            status_code=401,
+            content={
+                "error": "Authorization header required"
+            }
+        )
+
+    # Check Bearer token format
+    parts = authorization.split(" ", 1)
+
+    if len(parts) != 2 or parts[0].lower() != "bearer" or not parts[1]:
+        return JSONResponse(
+            status_code=401,
+            content={
+                "error": "Invalid authorization header"
+            }
+        )
+
+    token = parts[1]
+
+    # Stage 2 only checks that a Bearer token is present.
+    # Actual JWT verification is implemented in Stage 3.
+    return {
+        "message": "Bearer token received",
+        "token_present": True
+    }
